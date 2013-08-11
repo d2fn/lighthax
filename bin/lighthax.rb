@@ -32,15 +32,27 @@ class Lights
     @rwhttp = rwhttp
   end
 
+  def lights
+    if @lights
+      @lights
+    else
+      fixtures
+      @lights
+    end
+  end
+
   def fixtures
     if @fixtures
       @fixtures
     else
       @fixtures = @rwhttp.get("rApi/fixture")
-      puts @fixtures.inspect
       parse_fixtures
       @fixtures
     end
+  end
+
+  def light(serial)
+    @lights[serial]
   end
 
   def locations
@@ -48,7 +60,7 @@ class Lights
       @locations
     else
       @locations = @rwhttp.get("rApi/location")
-      puts @locations.inspect
+      parse_locations
       @locations
     end
   end
@@ -57,13 +69,32 @@ class Lights
     @serial_numbers = []
     @serial_number_to_name = {}
     @name_to_serial_number = {}
+    @lights = {}
     @fixtures.each do |f|
       sn = f["serialNum"]
       name = f["name"]
+      f["href"] = "/lights/#{sn}"
       @serial_numbers << sn
       @serial_number_to_name[sn] = name
       @name_to_serial_number[name] = sn
+      @lights[sn] = f
     end
+  end
+
+  def parse_locations
+    @locations = {}
+  end
+
+  def set_light_brightness(serial, level)
+  end
+
+  def set_location_brightness(id, level)
+  end
+
+  def blink_location_on(id)
+  end
+
+  def blink_location_off(id)
   end
 
   def blink_on(serials)
@@ -92,9 +123,34 @@ get '/fixtures' do
   lights.fixtures.to_json
 end
 
+get '/lights' do
+  content_type :json
+  lights.lights.to_json
+end
+
+get '/lights/:serial' do
+  content_type :json
+  lights.light(params[:serial]).to_json
+end
+
+post '/lights/:serial/brightness/:level' do
+  content-type :json
+  lights.set_light_brightness(params[:serial], params[:level]).to_json
+end
+
 get '/locations' do
   content_type :json
   lights.locations.to_json
+end
+
+get '/locations/:id' do
+  content_type :json
+  lights.locations.to_json
+end
+
+post '/locations/:id/brightness/:level' do
+  content-type :json
+  lights.set_location_brightness(params[:id], params[:level]).to_json
 end
 
 get '/serial_numbers' do
